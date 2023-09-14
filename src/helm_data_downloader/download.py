@@ -10,8 +10,7 @@ from pyquery import PyQuery as pq
 @dataclass
 class Args:
     """CLI Arguments"""
-    source_url: str
-    source_file: Optional[Path]
+    source_file: Path
     storage_url: str
     output_dir: Path
     redownload: bool
@@ -24,16 +23,11 @@ class RunInfo():
     href: str
     adaptation_method: str
 
+    def path_safe_id(self):
+        return urllib.parse.quote(self.id, safe="")
+
 def run(args: Args):
-    # session = HTMLSession()
-    # page = session.get(args.source_url, params={"runs": 1})
-    # page.html.render()
-
-    if args.source_file is not None:
-        page = args.source_file.read_text()
-    else:
-        page = requests.get(args.source_url, {"runs": 1}).text
-
+    page = args.source_file.read_text()
     page = pq(page)
 
     # Find all runs in the page
@@ -45,8 +39,13 @@ def run(args: Args):
         adaptation_method=str(pq(run[1]).text()) # Get second column and get the text
     ) for run in runs_raw]
 
-    already_downloaded = set(run.id for run in runs if (args.output_dir / urllib.parse.quote(run.id, safe="")).exists())
-    # TODO Filter out runs that don't have all three files present
+    # Manage already downloaded runs
+    already_downloaded = set(run.id for run in runs if (
+        (args.output_dir / run.path_safe_id()).exists() and
+        (args.output_dir / run.path_safe_id() / "run_spec.json").exists() and
+        (args.output_dir / run.path_safe_id() / "scenario_state.json").exists() and
+        (args.output_dir / run.path_safe_id() / "scenario.json").exists()
+    ))
     runs_to_download = [run for run in runs if run.id not in already_downloaded]
     if len(already_downloaded) > 0 and not args.redownload:
         print(f"Found {len(runs)} runs online, and {len(already_downloaded)} runs already downloaded.\n" + \
@@ -58,11 +57,10 @@ def run(args: Args):
         else:
             print(f"Found {len(runs)} runs online. No runs already downloaded found. Downloading all.")
 
-
+    # Download runs
     args.output_dir.mkdir(parents=True, exist_ok=True)
     for run in tqdm(runs_to_download[:args.max_runs]):
-        path_safe_run_id = urllib.parse.quote(run.id, safe="")
-        run_dir_path = args.output_dir / path_safe_run_id
+        run_dir_path = args.output_dir / run.path_safe_id()
         run_dir_path.mkdir(parents=True, exist_ok=True)
     
         run_spec = requests.get(f"{args.storage_url}{run.id}/run_spec.json")
@@ -80,12 +78,16 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="HELM Data Downloader")
-    parser.add_argument("--source-url", type=str, default="https://crfm.stanford.edu/helm/latest/", help="Source URL to download data from.")
-    parser.add_argument("--source-file", type=Path, help="Already downloaded source file with all raw runs.")
-    parser.add_argument("--storage-url", type=str, default="https://storage.googleapis.com/crfm-helm-public/benchmark_output/runs/v0.2.3/", help="Storage URL to download run data from.")
-    parser.add_argument("--output-dir", type=Path, default="data", help="Output directory to store downloaded data.")
-    parser.add_argument("--redownload", action="store_true", help="Redownload all data, even if present already.")
-    parser.add_argument("--max-runs", type=int, default=None, help="Maximum number of runs to download.")
+    parser.add_argument("source-file", type=Path, 
+                        help="Path to already downloaded HELM /runs HTLM file that list all runs.")
+    parser.add_argument("--storage-url", type=str, default="https://storage.googleapis.com/crfm-helm-public/benchmark_output/runs/v0.2.3/", 
+                        help="Storage URL to download run data from. Can be useful to download older versions.")
+    parser.add_argument("--output-dir", type=Path, default="data", 
+                        help="Output directory to store downloaded data.")
+    parser.add_argument("--redownload", action="store_true", 
+                        help="Redownload all data, even if present already.")
+    parser.add_argument("--max-runs", type=int, default=None,
+                         help="Maximum number of runs to download.")
 
     args = parser.parse_args()
 
