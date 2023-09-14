@@ -21,9 +21,6 @@ Found 6879 runs online. No runs already downloaded found. Downloading all.
   3%|██▊...
 ```
 
-You might need to specify the storage API to get the latest results,
-we currently hardcode `https://storage.googleapis.com/crfm-helm-public/benchmark_output/runs/v0.2.3/` to avoid having to run selenium. Find out by clicking on e.g. `Full JSON` on a run info page like [this one](https://crfm.stanford.edu/helm/latest/?runs=1&runSpec=babi_qa%3Atask%3D15%2Cmodel%3Dtogether_glm%2Cstop%3Dhash), and set the correct storage URL with `--storage-url`.
-
 ### Options
 
 ```shell
@@ -44,3 +41,7 @@ options:
   --redownload          Redownload all data, even if present already.
   --max-runs MAX_RUNS   Maximum number of runs to download.
 ```
+
+You might want the version of results to download. We currently hardcode v0.2.3, to avoid having to run selenium to fetch the actual latest version (since the HELM webpage is JS based).
+
+To do that, you want to specify the `--storage-url` argument to replace the current default `https://storage.googleapis.com/crfm-helm-public/benchmark_output/runs/v0.2.3/`. You can find out by clicking on `Spec JSON` or `Full JSON` on a run info page (pick any from [here](https://crfm.stanford.edu/helm/latest/?runs=1)), and looking at the URL it goes to.
