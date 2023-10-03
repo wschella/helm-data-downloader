@@ -7,12 +7,14 @@
 #   all-features: false
 
 -e file:.
+autopep8==2.0.4
 certifi==2023.7.22
 charset-normalizer==3.2.0
-cssselect==1.2.0
 idna==3.4
-lxml==4.9.3
-pyquery==2.0.0
+mypy==1.5.1
+mypy-extensions==1.0.0
+pycodestyle==2.11.0
 requests==2.31.0
 tqdm==4.66.1
+typing-extensions==4.8.0
 urllib3==2.0.4
