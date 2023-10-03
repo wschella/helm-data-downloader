@@ -1,12 +1,16 @@
 # HELM Data Downloader
 
-TODO: Remove todo's from download
-
 Download evaluation data from the Stanford Holistic Evaluation of Language Models (HELM) project
 
 At the time of writing, the HELM evaluation effort contains almost 7000 evaluation runs, totalling about 70GiB of prompts, model outputs, and meta data.
 
 This script/tool allows you to download it all easily.
+
+## Install
+
+```shell
+pip install git+https://github.com/wschella/helm-data-downloader
+```
 
 ## Usage
 
