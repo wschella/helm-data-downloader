@@ -1,4 +1,4 @@
-from typing import *
+from typing import Optional
 from pathlib import Path
 from dataclasses import dataclass
 import urllib.parse
@@ -55,9 +55,9 @@ def run(args: Args):
             benchmarking_js = requests.get("https://crfm.stanford.edu/helm/latest/benchmarking.js")
             # The JS currently looks like `version = "release" in urlParams ? urlParams.release : "v0.2.4";`
             semver = re.search(r'version = "release" in urlParams \? urlParams\.release ?: ?"(v\d+\.\d+\.\d+)";',
-                               benchmarking_js.text).group(1)
+                               benchmarking_js.text).group(1)  # type: ignore
             print(f"Using latest version, which is found to be '{semver}'.")
-        except Exception as e:
+        except Exception:
             print("Could not find latest version automatically. Try setting it manually with e.g. `--version v0.2.4`.")
             sys.exit(1)
     else:
@@ -117,7 +117,7 @@ def main():
     parser = argparse.ArgumentParser(description="HELM Data Downloader")
     parser.add_argument("--version", type=str, default="latest",
                         help="HELM release version to download data from. Example: v0.2.4, default is 'latest'.")
-    parser.add_argument("--output-dir", type=Optional[Path],
+    parser.add_argument("--output-dir", type=Path, default=None,
                         help="Output directory to store downloaded data. Default: ./data/{VERSION}/")
     parser.add_argument("--storage-url", type=str, default="https://storage.googleapis.com/crfm-helm-public/benchmark_output/",
                         help="The URL to download data from. Default: <https://storage.googleapis.com/crfm-helm-public/benchmark_output/>." +
