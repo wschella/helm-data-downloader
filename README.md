@@ -2,7 +2,7 @@
 
 Download evaluation data from the Stanford Holistic Evaluation of Language Models (HELM) project
 
-At the time of writing, the HELM evaluation effort contains almost 7000 evaluation runs, totalling about 70GiB of prompts, model outputs, and meta data.
+At the time of writing, the HELM evaluation effort is at release v0.4.0 and contains more than almost 8500 evaluation runs, totalling more than 800GiB of prompts, model outputs, and meta data.
 
 This script/tool allows you to download it all easily.
 
@@ -17,11 +17,11 @@ pip install git+https://github.com/wschella/helm-data-downloader
 Run the downloader:
 
 ```shell
-$ helmdd --version latest
-Found 6879 runs online. No runs already downloaded found. Downloading all.
-  2%|██▋              | 171/6879 [07:05<4:56
-  3%|██▋              | 172/6879 [07:07<4:53
-  3%|██▋              | 173/6879 [07:10<4:45
+$ helmdd --release latest
+Found 8526 runs online. No runs already downloaded found. Downloading all.
+  2%|██▋              | 171/8526 [07:05<4:56
+  3%|██▋              | 172/8526 [07:07<4:53
+  3%|██▋              | 173/8526 [07:10<4:45
   3%|██▊...
 ```
 
@@ -29,7 +29,7 @@ Found 6879 runs online. No runs already downloaded found. Downloading all.
 
 ```shell
 $ helmdd --help
-usage: helmdd [-h] [--version VERSION] [--output-dir OUTPUT_DIR] [--storage-url STORAGE_URL] [--redownload] [--max-runs MAX_RUNS] [--dry-run]
+usage: helmdd [-h] [--release VERSION] [--output-dir OUTPUT_DIR] [--storage-url STORAGE_URL] [--redownload] [--max-runs MAX_RUNS] [--dry-run]
 
 HELM Data Downloader
 
