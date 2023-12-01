@@ -1,14 +1,15 @@
 [project]
 name            = "helm-data-downloader"
 version         = "0.1.0"
-description     = "Download (all) evaluation data from the Stanford HELM benchmarking effort."
+description     = "Download (all) evaluation data from the Stanford HELM and HEIM benchmarking efforts."
 authors         = [{ name = "Wout Schellaert", email = "wout@schellaert.org" }]
 dependencies    = ["requests>=2.31.0", "tqdm>=4.66.1"]
 readme          = "README.md"
 requires-python = ">= 3.8"
 
 [project.scripts]
-helmdd = "helm_data_downloader.download:main"
+helmdd = "helm_data_downloader.helm:main"
+heimdd = "helm_data_downloader.heim:main"
 
 [build-system]
 requires      = ["hatchling"]

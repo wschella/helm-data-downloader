@@ -1,6 +1,6 @@
-# HELM Data Downloader
+# HELM and HEIM Data Downloader
 
-Download evaluation data from the Stanford Holistic Evaluation of Language Models (HELM) project
+Download evaluation data from the Stanford _Holistic Evaluation of Language Models (HELM)_ and _Holistic Evaluation of Text-To-Image Models (HEIM)_ projects.
 
 At the time of writing, the HELM evaluation effort is at release v0.4.0 and contains more than almost 8500 evaluation runs, totalling more than 800GiB of prompts, model outputs, and meta data.
 
@@ -24,6 +24,8 @@ Found 8526 runs online. No runs already downloaded found. Downloading all.
   3%|██▋              | 173/8526 [07:10<4:45
   3%|██▊...
 ```
+
+Same goes for HEIM, just use `heimdd` instead of `helmdd`.
 
 ### Options
 

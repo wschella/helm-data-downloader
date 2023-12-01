@@ -1,4 +1,6 @@
 data/
+helm-data/
+heim-data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

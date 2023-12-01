@@ -1,32 +1,11 @@
-from typing import Optional
 from pathlib import Path
-from dataclasses import dataclass
-import urllib.parse
 import re
 import sys
 
 import requests
 from tqdm import tqdm
 
-
-@dataclass
-class Args:
-    """CLI Arguments"""
-
-    release: str
-    output_dir: Path
-    storage_url: Optional[str]
-    redownload: bool
-    max_runs: Optional[int]
-    dry_run: bool
-
-
-@dataclass
-class RunInfo:
-    id: str
-
-    def path_safe_id(self):
-        return urllib.parse.quote(self.id, safe="")
+from helm_data_downloader.shared import Args, RunInfo, get_arg_parser
 
 
 def run(args: Args):
@@ -71,9 +50,8 @@ def run(args: Args):
             ).group(1)  # type: ignore
             print(f"Using latest release, which is found to be '{semver}'.")
         except Exception:
-            print(
-                "Could not find latest release automatically. Try setting it manually with e.g. `--release v0.2.4`."
-            )
+            print("Could not find latest release automatically. ", end="")
+            print("Try setting it manually with e.g. `--release v0.2.4`.")
             sys.exit(1)
     else:
         semver = args.release
@@ -101,7 +79,7 @@ def run(args: Args):
     storage_url = storage_url.rstrip("/")
     storage_url = f"{storage_url}/benchmark_output/releases"
 
-    output_dir = args.output_dir or Path(f"./data/{semver}/")
+    output_dir = args.output_dir or Path(f"./helm-data/{semver}/")
 
     # Get run ids
     print(f"Getting run ids from {storage_url}/{semver}/run_specs.json")
@@ -120,7 +98,8 @@ def run(args: Args):
         )
     )
     runs_to_download = [run for run in runs if run.id not in already_downloaded]
-    print(f"Found {len(runs)} runs online.", end="")
+    runs_to_download = sorted(runs_to_download, key=lambda run: run.id)
+    print(f"Found {len(runs)} runs online.", end=" ")
     print(f"Found {len(already_downloaded)} runs already downloaded.")
     if args.redownload:
         print(f"Redownload flag set. Downloading all {len(runs_to_download)} runs.")
@@ -153,44 +132,11 @@ def run(args: Args):
 
 
 def main():
-    import argparse
-
-    parser = argparse.ArgumentParser(description="HELM Data Downloader")
-    parser.add_argument(
-        "--release",
-        type=str,
-        default="latest",
-        help="HELM release version to download data from. Example: v0.2.4. The default is 'latest'.",
+    parser = get_arg_parser(
+        benchmark="HELM",
+        storage_url="https://storage.googleapis.com/crfm-helm-public/",
     )
-    parser.add_argument(
-        "--output-dir",
-        type=Path,
-        default=None,
-        help="Output directory to store downloaded data. Default: ./data/{RELEASE}/",
-    )
-    parser.add_argument(
-        "--storage-url",
-        type=str,
-        default=None,
-        help="The URL to download data from. Default behaviour is to search for it on the HELM website, "
-        + "and if not found, use default value <https://storage.googleapis.com/crfm-helm-public/>."
-        + "It can be changed to e.g. use local mirror with similar folder structure, "
-        + "or adapted when HELM changes their storage location and this tool has not been updated yet.",
-    )
-    parser.add_argument(
-        "--redownload",
-        action="store_true",
-        help="Redownload all data, even if present already.",
-    )
-    parser.add_argument(
-        "--max-runs", type=int, default=None, help="Maximum number of runs to download."
-    )
-    parser.add_argument(
-        "--dry-run", action="store_true", help="Dry run. Do not download any runs."
-    )
-
     args = parser.parse_args()
-
     run(Args(**vars(args)))
 
 
