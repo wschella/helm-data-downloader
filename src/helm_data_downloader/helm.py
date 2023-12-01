@@ -94,15 +94,21 @@ def run(args: Args):
 
     output_dir = args.output_dir or Path("./helm-data/") / release
 
+    # All the different files associated with a run
+    run_files = [
+        # "run_spec.json",
+        # "scenario.json",
+        "scenario_state.json",  # Has the logprobs
+        # "stats.json",
+        "instances.json",  # !Important! Has inputs
+        "display_predictions.json",  # !Important! Has outputs and metrics
+        # "display_requests.json",
+    ]
+
     # Manage already downloaded runs
     def is_downloaded(run: RunInfo):
         run_dir = output_dir / run.path_safe_id()
-        return (
-            run_dir.exists()
-            and (run_dir / "run_spec.json").exists()
-            and (run_dir / "scenario_state.json").exists()
-            and (run_dir / "scenario.json").exists()
-        )
+        return all((run_dir / f"{file}").exists() for file in run_files)
 
     already_downloaded = set(run.id for run in runs if is_downloaded(run))
     runs_to_download = [run for run in runs if run.id not in already_downloaded]
@@ -114,7 +120,7 @@ def run(args: Args):
     else:
         print(f"Downloading remaining {len(runs_to_download)} runs.")
     if args.max_runs is not None:
-        print(f"NOTE: Capped at {args.max_runs} runs, by --max-runs.")
+        print(f"NOTE: Capped at {args.max_runs} runs by --max-runs.")
     if args.dry_run:
         print("NOTE: Dry run. Not downloading any runs.")
 
@@ -128,20 +134,16 @@ def run(args: Args):
         run_dir_path.mkdir(parents=True, exist_ok=True)
 
         run_url = f"{storage_url}/runs/{run.suite}/{run.id}"
-        run_spec = requests.get(f"{run_url}/run_spec.json")
-        scenario_state = requests.get(f"{run_url}/scenario_state.json")  # fmt: skip
-        scenario = requests.get(f"{run_url}/scenario.json")
-
-        assert run_spec.status_code == 200
-        assert scenario_state.status_code == 200
-        assert scenario.status_code == 200
-
-        with open(run_dir_path / "run_spec.json", "wb") as f:
-            f.write(run_spec.content)
-        with open(run_dir_path / "scenario_state.json", "wb") as f:
-            f.write(scenario_state.content)
-        with open(run_dir_path / "scenario.json", "wb") as f:
-            f.write(scenario.content)
+        for file_name in run_files:
+            file_url = f"{run_url}/{file_name}"
+            file = requests.get(file_url)
+            if file.status_code == 200:
+                with open(run_dir_path / file_name, "wb") as f:
+                    f.write(file.content)
+            else:
+                with open(run_dir_path / f"{file_name}.error", "wb") as f:
+                    f.write(file.content)
+                raise Exception(f"Could not download {file_name} from {file_url}.")
 
 
 def main():

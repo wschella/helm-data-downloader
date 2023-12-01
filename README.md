@@ -47,3 +47,12 @@ options:
   --max-runs MAX_RUNS   Maximum number of runs to download.
   --dry-run             Dry run. Do not download any runs.
 ```
+
+### Further notes
+
+Currently still not possible yet:
+
+* filter runs to download (as on the HELM/HEIM web pages)
+* select which data to download (prompts, model outputs, meta data)
+
+All of this should be easy to add yourself if needed. Feel free to open a PR.

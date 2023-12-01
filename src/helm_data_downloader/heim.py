@@ -80,17 +80,23 @@ def run(args: Args):
     run_specs = requests.get(f"{storage_url}/runs/{semver}/run_specs.json").json()
     runs = [RunInfo(id=run_spec["name"], suite=semver) for run_spec in run_specs]
 
+    # All the different files associated with a run
+    run_files = [
+        # "run_spec.json",
+        # "scenario.json",
+        # "scenario_state.json",
+        # "stats.json",
+        "instances.json",  # !Important! Has inputs
+        "display_predictions.json",  # !Important! Has outputs and metrics
+        # "display_requests.json",
+    ]
+
     # Manage already downloaded runs
-    already_downloaded = set(
-        run.id
-        for run in runs
-        if (
-            (output_dir / run.path_safe_id()).exists()
-            and (output_dir / run.path_safe_id() / "run_spec.json").exists()
-            and (output_dir / run.path_safe_id() / "scenario_state.json").exists()
-            and (output_dir / run.path_safe_id() / "scenario.json").exists()
-        )
-    )
+    def is_downloaded(run: RunInfo):
+        run_dir = output_dir / run.path_safe_id()
+        return all((run_dir / f"{file}").exists() for file in run_files)
+
+    already_downloaded = set(run.id for run in runs if is_downloaded(run))
     runs_to_download = [run for run in runs if run.id not in already_downloaded]
     runs_to_download = sorted(runs_to_download, key=lambda run: run.id)
     print(f"Found {len(runs)} runs online.", end=" ")
@@ -100,7 +106,7 @@ def run(args: Args):
     else:
         print(f"Downloading remaining {len(runs_to_download)} runs.")
     if args.max_runs is not None:
-        print(f"NOTE: Capped at {args.max_runs} runs, by --max-runs.")
+        print(f"NOTE: Capped at {args.max_runs} runs by --max-runs.")
     if args.dry_run:
         print("NOTE: Dry run. Not downloading any runs.")
 
@@ -113,21 +119,17 @@ def run(args: Args):
         run_dir_path = output_dir / run.path_safe_id()
         run_dir_path.mkdir(parents=True, exist_ok=True)
 
-        run_spec = requests.get(f"{storage_url}/runs/{semver}/{run.id}/run_spec.json")
-        scenario_state = requests.get(f"{storage_url}/runs/{semver}/{run.id}/scenario_state.json")  # fmt: skip
-        scenario = requests.get(f"{storage_url}/runs/{semver}/{run.id}/scenario.json")
-        # TODO: Get completions.
-
-        assert run_spec.status_code == 200
-        assert scenario_state.status_code == 200
-        assert scenario.status_code == 200
-
-        with open(run_dir_path / "run_spec.json", "wb") as f:
-            f.write(run_spec.content)
-        with open(run_dir_path / "scenario_state.json", "wb") as f:
-            f.write(scenario_state.content)
-        with open(run_dir_path / "scenario.json", "wb") as f:
-            f.write(scenario.content)
+        run_url = f"{storage_url}/runs/{run.suite}/{run.id}"
+        for file_name in run_files:
+            file_url = f"{run_url}/{file_name}"
+            file = requests.get(file_url)
+            if file.status_code == 200:
+                with open(run_dir_path / file_name, "wb") as f:
+                    f.write(file.content)
+            else:
+                with open(run_dir_path / f"{file_name}.error", "wb") as f:
+                    f.write(file.content)
+                raise Exception(f"Could not download {file_name} from {file_url}.")
 
 
 def main():
