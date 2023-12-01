@@ -78,7 +78,7 @@ def run(args: Args):
     # Get run ids
     print(f"Getting run ids from {storage_url}/runs/{semver}/run_specs.json")
     run_specs = requests.get(f"{storage_url}/runs/{semver}/run_specs.json").json()
-    runs = [RunInfo(id=run_spec["name"]) for run_spec in run_specs]
+    runs = [RunInfo(id=run_spec["name"], suite=semver) for run_spec in run_specs]
 
     # Manage already downloaded runs
     already_downloaded = set(
@@ -116,8 +116,11 @@ def run(args: Args):
         run_spec = requests.get(f"{storage_url}/runs/{semver}/{run.id}/run_spec.json")
         scenario_state = requests.get(f"{storage_url}/runs/{semver}/{run.id}/scenario_state.json")  # fmt: skip
         scenario = requests.get(f"{storage_url}/runs/{semver}/{run.id}/scenario.json")
-
         # TODO: Get completions.
+
+        assert run_spec.status_code == 200
+        assert scenario_state.status_code == 200
+        assert scenario.status_code == 200
 
         with open(run_dir_path / "run_spec.json", "wb") as f:
             f.write(run_spec.content)

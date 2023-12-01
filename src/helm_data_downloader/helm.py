@@ -24,12 +24,14 @@ def run(args: Args):
     The list of all runs is available at
       <{BASE_URL}/benchmark_output/runs/{RELEASE}/run_specs.json>,
       where {RELEASE} is the semver string, e.g. v0.2.4.
-    The data for each individual run is available at
-      <{BASE_URL}/benchmark_output/runs/{RELEASE}/{RUN_ID}/scenario_state.json>,
-      where {RUN_ID} is a run id babi_qa:task=15,model=AlephAlpha_luminous-base,
-      which is sourced from the run_specs.json.
-    The latest mapping from run ids to run suites is available at
+    The latest mapping from run ids to run suites (i.e. releases) is available at
       <{BASE_URL}/benchmark_output/runs/{RELEASE}/runs_to_run_suites.json>.
+    The data for each individual run is available at
+      <{BASE_URL}/benchmark_output/runs/{SPECIFIC-RELEASE}/{RUN_ID}/scenario_state.json>,
+      where {RUN_ID} is a run id babi_qa:task=15,model=AlephAlpha_luminous-base,
+      which is sourced from the run_specs.json, and
+      {SPECIFIC-RELEASE} is the specific release that the run was run on,
+      defined in runs_to_run_suites.json.
 
     A complete example of all instance results is this:
      https://storage.googleapis.com/crfm-helm-public/benchmark_output/runs/v0.2.3/babi_qa:task=15,model=AlephAlpha_luminous-base/run_spec.json
@@ -44,17 +46,17 @@ def run(args: Args):
             # window.SUITE = null;
             # ```
             config_js = requests.get("https://crfm.stanford.edu/helm/latest/config.js")
-            semver = re.search(
+            release = re.search(
                 r'window.RELEASE = "(v\d+\.\d+\.\d+)";',
                 config_js.text,
             ).group(1)  # type: ignore
-            print(f"Using latest release, which is found to be '{semver}'.")
+            print(f"Using latest release, which is found to be '{release}'.")
         except Exception:
             print("Could not find latest release automatically. ", end="")
             print("Try setting it manually with e.g. `--release v0.2.4`.")
             sys.exit(1)
     else:
-        semver = args.release
+        release = args.release
 
     # Get storage url
     if args.storage_url is None:
@@ -77,26 +79,32 @@ def run(args: Args):
 
     # Normalise storage url
     storage_url = storage_url.rstrip("/")
-    storage_url = f"{storage_url}/benchmark_output/releases"
-
-    output_dir = args.output_dir or Path(f"./helm-data/{semver}/")
+    storage_url = f"{storage_url}/benchmark_output"
+    release_url = f"{storage_url}/releases/{release}"
 
     # Get run ids
-    print(f"Getting run ids from {storage_url}/{semver}/run_specs.json")
-    run_specs = requests.get(f"{storage_url}/{semver}/run_specs.json").json()
-    runs = [RunInfo(id=run_spec["name"]) for run_spec in run_specs]
+    print(f"Getting run ids from {release_url}/run_specs.json")
+    run_specs = requests.get(f"{release_url}/run_specs.json").json()
+    run_ids = [run_spec["name"] for run_spec in run_specs]
+
+    # Get run to suite mapping
+    print(f"Getting run to suite mapping from {release_url}/runs_to_run_suites.json")  # fmt: skip
+    runs_to_run_suites = requests.get(f"{release_url}/runs_to_run_suites.json").json()  # fmt: skip
+    runs = [RunInfo(id=id, suite=runs_to_run_suites[id]) for id in run_ids]
+
+    output_dir = args.output_dir or Path("./helm-data/") / release
 
     # Manage already downloaded runs
-    already_downloaded = set(
-        run.id
-        for run in runs
-        if (
-            (output_dir / run.path_safe_id()).exists()
-            and (output_dir / run.path_safe_id() / "run_spec.json").exists()
-            and (output_dir / run.path_safe_id() / "scenario_state.json").exists()
-            and (output_dir / run.path_safe_id() / "scenario.json").exists()
+    def is_downloaded(run: RunInfo):
+        run_dir = output_dir / run.path_safe_id()
+        return (
+            run_dir.exists()
+            and (run_dir / "run_spec.json").exists()
+            and (run_dir / "scenario_state.json").exists()
+            and (run_dir / "scenario.json").exists()
         )
-    )
+
+    already_downloaded = set(run.id for run in runs if is_downloaded(run))
     runs_to_download = [run for run in runs if run.id not in already_downloaded]
     runs_to_download = sorted(runs_to_download, key=lambda run: run.id)
     print(f"Found {len(runs)} runs online.", end=" ")
@@ -119,9 +127,14 @@ def run(args: Args):
         run_dir_path = output_dir / run.path_safe_id()
         run_dir_path.mkdir(parents=True, exist_ok=True)
 
-        run_spec = requests.get(f"{storage_url}/runs/{run.id}/run_spec.json")
-        scenario_state = requests.get(f"{storage_url}/runs/{run.id}/scenario_state.json")  # fmt: skip
-        scenario = requests.get(f"{storage_url}/runs/{run.id}/scenario.json")
+        run_url = f"{storage_url}/runs/{run.suite}/{run.id}"
+        run_spec = requests.get(f"{run_url}/run_spec.json")
+        scenario_state = requests.get(f"{run_url}/scenario_state.json")  # fmt: skip
+        scenario = requests.get(f"{run_url}/scenario.json")
+
+        assert run_spec.status_code == 200
+        assert scenario_state.status_code == 200
+        assert scenario.status_code == 200
 
         with open(run_dir_path / "run_spec.json", "wb") as f:
             f.write(run_spec.content)

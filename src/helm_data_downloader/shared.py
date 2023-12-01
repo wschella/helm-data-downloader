@@ -21,6 +21,7 @@ class Args:
 @dataclass
 class RunInfo:
     id: str
+    suite: str
 
     def path_safe_id(self):
         return urllib.parse.quote(self.id, safe="")
