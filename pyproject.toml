@@ -23,5 +23,8 @@ exclude = [".vscode/", "examples/"]
 managed          = true
 dev-dependencies = ["mypy>=1.5.1", "autopep8>=2.0.4"]
 
+[tool.ruff]
+line-length = 88
+
 [tool.hatch.metadata]
 allow-direct-references = true

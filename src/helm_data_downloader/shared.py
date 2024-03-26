@@ -16,6 +16,20 @@ class Args:
     redownload: bool
     max_runs: Optional[int]
     dry_run: bool
+    files: list[str]
+
+    def get_files(self):
+        if "all" in self.files:
+            return [
+                "run_spec.json",
+                "scenario.json",
+                "scenario_state.json",
+                "stats.json",
+                "instances.json",
+                "display_predictions.json",
+                "display_requests.json",
+            ]
+        return self.files
 
 
 @dataclass
@@ -66,5 +80,19 @@ def get_arg_parser(
     )
     parser.add_argument(
         "--dry-run", action="store_true", help="Dry run. Do not download any runs."
+    )
+    parser.add_argument(
+        "--files",
+        type=str,
+        nargs="+",
+        default=[
+            "scenario_state.json",
+            "instances.json",
+            "display_predictions.json",
+        ],
+        help="Files to download for each run. "
+        + "Default: [scenario_state.json, instances.json, display_predictions.json]. "
+        + "Available [run_spec.json, scenario.json, scenario_state.json, stats.json, instances.json, display_predictions.json, display_requests.json]"
+        + "You can also put 'all' to download all files.",
     )
     return parser

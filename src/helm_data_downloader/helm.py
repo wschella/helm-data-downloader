@@ -1,6 +1,7 @@
 from pathlib import Path
 import re
 import sys
+import json
 
 import requests
 from tqdm import tqdm
@@ -13,13 +14,15 @@ def run(args: Args):
     Download all runs from the HELM benchmarking website.
 
     The latest release of the benchmarking website is at
-     <https://crfm.stanford.edu/helm/latest/#/runs>.
+     <https://crfm.stanford.edu/helm/classic/latest/#/runs>.
     The corresponding semver string is provided in
-      <https://crfm.stanford.edu/helm/latest/config.js>, which looks like:
+      <https://crfm.stanford.edu/helm/classic/latest/config.js>, which looks like:
         ```
-        window.BENCHMARK_OUTPUT_BASE_URL = "https://storage.googleapis.com/crfm-helm-public/";
-        window.RELEASE = "v0.4.0";
+        window.BENCHMARK_OUTPUT_BASE_URL = "https://storage.googleapis.com/crfm-helm-public/benchmark_output/";
         window.SUITE = null;
+        window.RELEASE = "v0.4.0";
+        window.HELM_TYPE = "Classic";
+        window.PROJECT_ID = "classic";
         ```
     The list of all runs is available at
       <{BASE_URL}/benchmark_output/runs/{RELEASE}/run_specs.json>,
@@ -39,13 +42,8 @@ def run(args: Args):
     # Get semver
     if args.release == "latest":
         try:
-            # ```
-            # window.BENCHMARK_OUTPUT_BASE_URL =
-            #       "https://storage.googleapis.com/crfm-helm-public/";
-            # window.RELEASE = "v0.4.0";
-            # window.SUITE = null;
-            # ```
-            config_js = requests.get("https://crfm.stanford.edu/helm/latest/config.js")
+            # See docstring for more info.
+            config_js = requests.get("https://crfm.stanford.edu/helm/classic/latest/config.js")  # fmt: skip
             release = re.search(
                 r'window.RELEASE = "(v\d+\.\d+\.\d+)";',
                 config_js.text,
@@ -61,7 +59,7 @@ def run(args: Args):
     # Get storage url
     if args.storage_url is None:
         try:
-            config_js = requests.get("https://crfm.stanford.edu/helm/latest/config.js")
+            config_js = requests.get("https://crfm.stanford.edu/helm/classic/latest/config.js")  # fmt: skip
             storage_url = re.search(
                 r'window.BENCHMARK_OUTPUT_BASE_URL =\s+"(.*)";',
                 config_js.text,
@@ -79,12 +77,20 @@ def run(args: Args):
 
     # Normalise storage url
     storage_url = storage_url.rstrip("/")
-    storage_url = f"{storage_url}/benchmark_output"
+    storage_url = f"{storage_url}"
     release_url = f"{storage_url}/releases/{release}"
 
     # Get run ids
     print(f"Getting run ids from {release_url}/run_specs.json")
-    run_specs = requests.get(f"{release_url}/run_specs.json").json()
+    try:
+        run_specs = requests.get(f"{release_url}/run_specs.json").json()
+    except json.JSONDecodeError as e:
+        print(f"Could not find run specs for release '{release}'.")
+        print("-------------- BEGIN HTML --------------")
+        print(e.doc)
+        print("-------------- END HTML --------------")
+        print("You'll have to fix the code yourself.")
+        sys.exit(1)
     run_ids = [run_spec["name"] for run_spec in run_specs]
 
     # Get run to suite mapping
@@ -95,15 +101,15 @@ def run(args: Args):
     output_dir = args.output_dir or Path("./helm-data/") / release
 
     # All the different files associated with a run
-    run_files = [
-        # "run_spec.json",
-        # "scenario.json",
-        "scenario_state.json",  # Has the logprobs
-        # "stats.json",
-        "instances.json",  # !Important! Has inputs
-        "display_predictions.json",  # !Important! Has outputs and metrics
-        # "display_requests.json",
-    ]
+    # Options:
+    # "run_spec.json",
+    # "scenario.json",
+    # "scenario_state.json",
+    # "stats.json",
+    # "instances.json",  # !Important! Has inputs
+    # "display_predictions.json",  # !Important! Has outputs and metrics
+    # "display_requests.json",
+    run_files = args.get_files()
 
     # Manage already downloaded runs
     def is_downloaded(run: RunInfo):

@@ -81,15 +81,15 @@ def run(args: Args):
     runs = [RunInfo(id=run_spec["name"], suite=semver) for run_spec in run_specs]
 
     # All the different files associated with a run
-    run_files = [
-        # "run_spec.json",
-        # "scenario.json",
-        # "scenario_state.json",
-        # "stats.json",
-        "instances.json",  # !Important! Has inputs
-        "display_predictions.json",  # !Important! Has outputs and metrics
-        # "display_requests.json",
-    ]
+    # Options:
+    # - run_spec.json
+    # - scenario.json
+    # - scenario_state.json
+    # - stats.json
+    # - instances.json # !Important! Has inputs
+    # - display_predictions.json # !Important! Has outputs and metrics
+    # - display_requests.json
+    run_files = args.get_files()
 
     # Manage already downloaded runs
     def is_downloaded(run: RunInfo):
