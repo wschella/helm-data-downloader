@@ -1,4 +1,4 @@
-# HELM and HEIM Data Downloader
+# HELM Data Downloader (helmdd)
 
 Download evaluation data from the Stanford _Holistic Evaluation of Language Models (HELM)_ project, including _HELM Lite_, _HELM Instruct_, and _HEIM_.
 
