@@ -178,7 +178,7 @@ def download_project(project: str, args: Args):
     output_dir = args.output_dir or Path(f"./helm-data/{project}/{release}/")
     output_dir.mkdir(parents=True, exist_ok=True)
     if args.files == ["all"]:
-        args.files = FILES
+        run_files = FILES
     else:
         assert all(file in FILES for file in args.files), f"Unknown file in {args.files}."  # fmt: skip
         run_files = args.files
