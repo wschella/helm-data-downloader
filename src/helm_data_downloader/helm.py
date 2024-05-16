@@ -177,7 +177,11 @@ def download_project(project: str, args: Args):
     # Configure outputs
     output_dir = args.output_dir or Path(f"./helm-data/{project}/{release}/")
     output_dir.mkdir(parents=True, exist_ok=True)
-    run_files = FILES if args.files == "all" else args.files
+    if args.files == ["all"]:
+        args.files = FILES
+    else:
+        assert all(file in FILES for file in args.files), f"Unknown file in {args.files}."  # fmt: skip
+        run_files = args.files
 
     # Manage already downloaded runs
     def is_downloaded(run: RunInfo):
