@@ -9,7 +9,6 @@ requires-python = ">= 3.8"
 
 [project.scripts]
 helmdd = "helm_data_downloader.helm:main"
-heimdd = "helm_data_downloader.heim:main"
 
 [build-system]
 requires      = ["hatchling"]
