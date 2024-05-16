@@ -1,5 +1,5 @@
 [project]
-name            = "helm-data-downloader"
+name            = "helmdd"
 version         = "0.1.0"
 description     = "Download (all) evaluation data from the Stanford HELM and HEIM benchmarking efforts."
 authors         = [{ name = "Wout Schellaert", email = "wout@schellaert.org" }]
@@ -8,7 +8,7 @@ readme          = "README.md"
 requires-python = ">= 3.8"
 
 [project.scripts]
-helmdd = "helm_data_downloader.helm:main"
+helmdd = "helmdd.helm:main"
 
 [build-system]
 requires      = ["hatchling"]
