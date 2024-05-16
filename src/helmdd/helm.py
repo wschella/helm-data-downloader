@@ -228,6 +228,7 @@ def get_parser():
     parser = argparse.ArgumentParser(description="HELM Data Downloader")
 
     parser.add_argument(
+        "-p",
         "--project",
         dest="project_id",
         type=str,
@@ -236,12 +237,14 @@ def get_parser():
     )
 
     parser.add_argument(
+        "-r",
         "--release",
         type=str,
         default="latest",
         help="Release version to download data from. Example: v0.2.4. The default is 'latest', which will search for the latest release.",
     )
     parser.add_argument(
+        "-o",
         "--output-dir",
         type=Path,
         default=None,
