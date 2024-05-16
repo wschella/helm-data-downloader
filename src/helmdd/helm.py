@@ -251,7 +251,7 @@ def get_parser():
         "--storage-url",
         type=str,
         default=None,
-        help="The URL to download data from. Default behaviour is to search for it on the HELM website."
+        help="The URL to download data from. Default behaviour is to search for it on the HELM website. "
         + "It can be changed to e.g. use local mirror with similar folder structure, "
         + "or adapted when HELM changes their storage location and this tool has not been updated yet.",
     )

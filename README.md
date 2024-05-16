@@ -12,6 +12,12 @@ This script/tool allows you to download it all easily.
 pip install git+https://github.com/wschella/helm-data-downloader
 ```
 
+or with Rye:
+
+```shell
+rye install --git https://github.com/wschella/helm-data-downloader.git helmdd
+```
+
 ## Usage
 
 Run the downloader:
